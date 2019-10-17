@@ -1,0 +1,186 @@
+---
+title: 'MIS-64036: Business Analytics Assignment I'
+author: "Sumanth"
+date: "10/16/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1.	a) What is the probability of obtaining a score greater than 700 on a GMAT test that has a mean of 494 and a standard deviation of 100? Assume GMAT scores are normally distributed (5 marks).
+
+b) What is the probability of getting a score between 350 and 450 on the same GMAT exam?(5 marks)
+
+```{r}
+1-pnorm(700, mean = 494, sd= 100)
+pnorm(450,mean=494,sd=100)-pnorm(350,mean=494,sd=100)
+```
+
+2.	Runzheimer International publishes business travel costs for various cities throughout the world. In particular, they publish per diem totals, which represent the average costs for the typical business traveler including three meals a day in business-class restaurants and single-rate lodging in business-class hotels and motels. If 86.65% of the per diem costs in Buenos Aires, Argentina, are less than $449 and if the standard deviation of per diem costs is $36, what is the average per diem cost in Buenos Aires? Assume that per diem costs are normally distributed (10 marks)
+
+```{r}
+U=449-(qnorm(0.8665)*36)
+U
+```
+
+3.	Chris is interested in understanding the correlation between temperature in Kent, OH and Los Angeles, CA. He has got the following data for September 2017 from Alpha Knowledgebase. (5 marks) 
+
+```{r eval=TRUE}
+K<-c(59, 68, 78, 60) 
+LA<-c(90, 82, 78, 75) 
+k_mean <-  mean(K)
+LA_mean  <- mean(LA)
+num <- sum((K-k_mean)*(LA-LA_mean))
+C1 <- sqrt(sum((K-k_mean)^2))
+C2 <- sqrt(sum((LA-LA_mean)^2))
+C <- C1 * C2
+r = num / C
+r     #Correlation
+```
+
+4.	Show the breakdown of the number of transactions by countries i.e. how many transactions are in the dataset for each country (consider all records including cancelled transactions). Show this in total number and also in percentage. Show only countries accounting for more than 1% of the total transactions. (5 marks)
+
+```{r}
+Retail <- read.csv("Online_Retail.csv")
+
+#Solution 4
+summary(Retail$Country)
+Country_totalnumber <- table(Retail$Country)
+transaction_percent <-round(100*prop.table(Country_totalnumber), digits = 2)
+percentage <- cbind(Country_totalnumber,transaction_percent)
+answer <- subset(percentage,transaction_percent>1)
+answer
+```
+
+
+5.	Create a new variable ‘TransactionValue’ that is the product of the exising ‘Quantity’ and ‘UnitPrice’ variables. Add this variable to the dataframe. (5 marks)
+
+```{r}
+library(dplyr)
+Retail <- Retail %>% mutate(TransactionValue= Quantity * UnitPrice)
+summary(Retail$TransactionValue)
+```
+
+6.	Using the newly created variable, TransactionValue, show the breakdown of transaction values by countries i.e. how much money in total has been spent each country. Show this in total sum of transaction values. Show only countries with total transaction exceeding 130,000 British Pound. (10 marks)
+
+```{r}
+data <- summarise(group_by(Retail,Country),sum_1= sum(TransactionValue))
+Transaction <- filter(data,sum_1 >130000)
+Transaction
+
+```
+
+7.	This is an optional question which carries additional marks (golden questions).
+
+```{r}
+Temp=strptime(Retail$InvoiceDate,format='%m/%d/%Y %H:%M',tz='GMT')
+head(Temp)
+Retail$New_Invoice_Date <- as.Date(Temp)
+Retail$New_Invoice_Date[20000]-Retail$New_Invoice_Date[10]
+Retail$Invoice_Day_Week= weekdays(Retail$New_Invoice_Date)
+Retail$New_Invoice_Hour = as.numeric(format(Temp, "%H"))
+Retail$New_Invoice_Month = as.numeric(format(Temp, "%m"))
+
+#7(a)
+a<-summarise(group_by(Retail,Invoice_Day_Week),Transaction_Value=n_distinct(InvoiceNo))
+a1<-mutate(a, transaction_percent=(Transaction_Value/sum(Transaction_Value))*100)
+a1
+
+#7(b)
+
+b1<-summarise(group_by(Retail,Invoice_Day_Week),Transaction_Volume=sum(TransactionValue))
+b2<-mutate(b1,percentage=(Transaction_Volume/sum(Transaction_Volume))*100)
+b2
+
+#7(c)
+c1<-summarise(group_by(Retail,New_Invoice_Month),Transaction_Volume=sum(TransactionValue))
+c1<-mutate(c1,percentage=(Transaction_Volume/sum(Transaction_Volume))*100)
+c1
+#7(d)
+Retail <- Retail %>% mutate(TransactionValue= Quantity * UnitPrice)
+
+Retail %>% filter(Country == 'Australia') %>% group_by(New_Invoice_Date) %>% summarise(max=max(TransactionValue))
+#7(e)
+e1<-summarise(group_by(Retail,New_Invoice_Hour),Transaction_min=n_distinct(InvoiceNo))
+e1<-filter(e1,New_Invoice_Hour>=7&New_Invoice_Hour<=20)
+e12<-rollapply(e1$Transaction_min,3,sum)
+e123<-which.min(e12)
+
+
+```
+
+8. Plot the histogram of transaction values from Germany. Use the hist() function to plot. 
+
+```{r}
+Germany_data <- subset(Retail$TransactionValue, Retail$Country == "Germany")
+hist(Germany_data, xlim = c (-600, 900), breaks = 100 , xlab = "Transaction Values of Germany", main = "Germany")
+
+```
+
+9. Which customer had the highest number of transactions? Which customer is most valuable (i.e. highest total sum of transactions)?
+
+```{r}
+Retail1 <- na.omit(Retail)
+result1 <- summarise(group_by(Retail1,CustomerID), sum2= sum(TransactionValue))
+result1[which.max(result1$sum2),]
+
+data2 <- table(Retail$CustomerID)
+data2 <- as.data.frame(data2)
+result2 <- data2[which.max(data2$Freq),]
+result2
+```
+
+10.	Calculate the percentage of missing values for each variable in the dataset (5 marks). Hint colMeans():
+
+```{r}
+missing_values <- colMeans(is.na(Retail)*100)
+missing_values
+```
+
+11. What are the number of transactions with missing CustomerID records by countries? (10 marks)
+
+```{r}
+Retail2 <- Retail %>% filter(is.na(CustomerID)) %>% group_by(Country)
+summary(Retail2$Country)
+
+```
+
+12. On average, how often the costumers comeback to the website for their next shopping? (i.e. what is the average number of days between consecutive shopping) (Optional/Golden question: 18 additional marks!) Hint: 1. A close approximation is also acceptable and you may find diff() function useful. 
+
+```{r}
+
+```
+
+13. In the retail sector, it is very important to understand the return rate of the goods purchased by customers. In this example, we can define this quantity, simply, as the ratio of the number of transactions cancelled (regardless of the transaction value) over the total number of transactions. With this definition, what is the return rate for the French customers? (10 marks). Consider the cancelled transactions as those where the ‘Quantity’ variable has a negative value.
+
+```{r}
+Retail_table <- filter(Retail,Country=="France")
+totalrow <- nrow(Retail_table)
+cancel <- nrow(subset(Retail_table,TransactionValue<0))
+cancel
+notcancel <- totalrow-cancel 
+notcancel
+TEST2=(cancel/8556)
+TEST2
+```
+
+14. What is the product that has generated the highest revenue for the retailer? (i.e. item with the highest total sum of ‘TransactionValue’)(10 marks)
+
+```{r}
+Transaction_Value <- tapply(Retail$TransactionValue, Retail$StockCode  , sum)
+Transaction_Value[which.max(Transaction_Value)]
+
+```
+
+15. How many unique customers are represented in the dataset? You can use unique() and length() functions. (5 marks)
+
+```{r}
+unique_customers <- unique(Retail$CustomerID)
+
+length(unique_customers)
+```
+
+
+

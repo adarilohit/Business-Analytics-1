@@ -1,0 +1,159 @@
+---
+title: "BA_HW2"
+author: "Sumanth"
+date: "11/7/2019"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+***
+1.	Run the following code in R-studio to create two variables X and Y.
+set.seed(2017)
+X=runif(100)*10
+Y=X*4+3.45
+Y=rnorm(100)*0.29*Y+Y
+
+```{r}
+set.seed(2017)
+X=runif(100)*10
+Y=X*4+3.45
+Y=rnorm(100)*0.29*Y+Y
+ 
+```
+
+a)	Plot Y against X. Include a screenshot of the plot in your submission. Using the File menu you can save the graph as a picture on your computer.  Based on the plot do you think we can fit a linear model to explain Y based on X? (5 Marks)
+
+```{r}
+plot(Y~X,xlab='X',ylab='Y',col='red')
+abline(lsfit(X, Y),col = "blue")
+```
+
+b)	Construct a simple linear model of Y based on X. Write the equation that explains Y based on X. What is the accuracy of this model? (5 Marks)
+
+Y=4.4655+3.6108*X
+Accuracy is 0.6517 or 65%
+```{r}
+fit <- lm(Y ~ X)
+summary(fit)
+```
+
+c)	How the Coefficient of Determination, R2, of the model above is related to the correlation coefficient of X and Y? (5 marks)
+```{r}
+cor(X,Y)^2
+```
+
+Solution: The square of correlation coefficient is same as coefficient of determination 65.17% 
+#Coefficient of Determination= (Correlation Coefficient)2
+
+d)	Investigate the appropriateness of using linear regression for this case (10 Marks). You may also find the story here relevant. 
+More useful hints: #residual analysis, #pattern of residuals, #normality of residuals.
+
+```{r}
+plot(fit)
+```
+
+# Residuals vs Fitted Plot
+
+Residual plots are used to look for underlying patterns in the residuals that may mean that the model has a problem.When using the plot() function, the first plot is the Residuals vs Fitted plot and gives an indication if there are non-linear patterns. For a correct linear regression, the data needs to be linear so this will test if that condition is met.
+
+# Normal Q–Q (quantile-quantile) Plot
+
+Residuals should be normally distributed and the Q-Q Plot will show this. If residuals follow close to a straight line on this plot, it is a good indication they are normally distributed.
+  For our model, the Q-Q plot shows pretty good alignment to the the line with a few points at the top slightly offset. Probably not significant and a reasonable alignment.
+
+# Scale-Location
+This plot test the linear regression assumption of equal variance (homoscedasticity) i.e. that the residuals have equal variance along the regression line. It is also called the Spread-Location plot.
+  For our model, the residuals are reasonably well spread above and below a pretty horizontal line however the beginning of the line does have fewer points so slightly less variance there.
+***
+
+2.	We will use the ‘mtcars’ dataset for this question. The dataset is already included in your R distribution. The dataset shows some of the characteristics of different cars. The following shows few samples (i.e. the first 6 rows) of the dataset. The description of the dataset can be found here.
+ 
+```{r}
+head(mtcars)
+```
+a)	James wants to buy a car.  He and his friend, Chris, have different opinions about the Horse Power (hp) of cars. James think the weight of a car (wt) can be used to estimate the Horse Power of the car while Chris thinks the fuel consumption expressed in Mile Per Gallon (mpg), is a better estimator of the (hp). Who do you think is right? Construct simple linear models using mtcars data to answer the question. (10 marks)
+
+Building a model based on James estimation:
+```{r}
+plot(mtcars$hp~mtcars$wt,xlab='Weight',ylab='HP',col='red')
+abline(lsfit(mtcars$wt,mtcars$hp),col = "blue")
+Model1<-lm(formula =hp~wt, data = mtcars )
+summary(Model1)
+```
+Accuracy of Model1 is 0.4339.
+
+
+Building a model based on Chris estimation:
+```{r}
+plot(mtcars$hp~mtcars$mpg,xlab='MPG',ylab='HP',col='red')
+abline(lsfit(mtcars$mpg, mtcars$hp),col = "blue")
+Model2<-lm(formula =hp~mpg, data = mtcars )
+summary(Model2)
+```
+Accuracy of the model2 is 0.6024
+
+Conclusion: Chris Estimation is fairly accurate enough. Hence, Chris is right.
+
+b)	Build a model that uses the number of cylinders (cyl) and the mile per gallon (mpg) values of a car to predict the car Horse Power (hp).
+
+I.	Using this model, what is the estimated Horse Power of a car with 4 calendar and mpg of 22? (5 mark)
+II.	Construct an 85% confidence interval of your answer in the above question. Hint: use the predict function (5 mark)  
+```{r}
+Model3<-lm(hp~cyl+mpg,data = mtcars)
+summary(Model3)
+estimated_HP<-predict(Model3,data.frame(cyl=4,mpg=22))
+estimated_HP
+predict(Model3,data.frame(cyl=4,mpg=22),interval = "prediction",level = 0.85)
+
+```
+
+3.	For this question, we are going to use BostonHousing dataset. The dataset is in ‘mlbench’ package, so we first need to install the package, call the library and load the dataset using the following commands
+
+```{r}
+#install.packages('mlbench')
+library(mlbench)
+data(BostonHousing)
+str(BostonHousing)
+
+#Let’s look at the variation in the values of various variables present in the dataset. This is achieved by plotting a boxplot of all the variables.
+boxplot(BostonHousing[,c(1,2,4,11,14)])
+
+```
+
+a)	Build a model to estimate the median value of owner-occupied homes (medv)based on the following variables: crime crate (crim), proportion of residential land zoned for lots over 25,000 sq.ft (zn), the local pupil-teacher ratio (ptratio) and weather the whether the tract bounds Chas River(chas). Is this an accurate model? (Hint check R2 ) (5 marks)
+
+```{r}
+set.seed(123)
+Model4<-lm(medv~crim+zn+ptratio+chas,data = BostonHousing)
+summary(Model4)
+```
+The Model Accuracy is 0.3599. The Model is not Accurate enough.
+
+b)	Use the estimated coefficient to answer these questions? 	
+
+I.	Imagine two houses that are identical in all aspects but one bounds the Chas River and the other does not. Which one is more expensive and by how much? (5 marks)
+
+Answer: Chas is factor of two levels '0' and '1'. The one bounds the chas river is represented with "1", who don't are with "0".Coefficient of chas1 is 4.58393 and in  the data description, it is given that the median value of owner-occupied homes is in 1000 dollars. when multiplied with coefficient, the result is 4583.93$ which is expensive
+
+II.	Imagine two houses that are identical in all aspects but in the neighborhood of one of them the pupil-teacher ratio is 15 and in the other one is 18. Which one is more expensive and by how much? (Golden Question: 10 extra marks if you answer)
+
+Answer: For every single unit increase in ptratio, price of houses is decreased by 1.49367 i.e., 1493.67 (in thousands).If ptratio is 15, there will be a decrease of 15 * 1493.67= 22405.05. similarly if ptratio is 18 then there will be a decrease of  18 * 1493.67=26886.06.So if pt ratio is 15 expensive by $4481.01 when comapred to ptratio 18. 
+
+c)	Which of the variables are statistically important (i.e. related to the house price)? Hint: use the p-values of the coefficients to answer.(5 mark)
+
+Answer: Yes, the p-values of all the variables are not equal to zero that means that we can very comfortably reject the default null hypothesis i.e. there is no relationship between House price and other variables in the model. Hence, all the variables are statistically important.
+
+
+d)	Use the anova analysis and determine the order of importance of these four variables.(5 marks) 
+```{r}
+anova(Model4)
+```
+
+Answer:  We can see that the variability (sum squared) explained by the crim variable is significantly higher than other variables. We could guess this as adding the crim, significantly improved the model. Still we can see that a large portion of the variability is unexplained, that is shown by residuals.
+
+The order of importance is crim, ptratio,zn, chas
